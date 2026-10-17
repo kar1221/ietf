@@ -1,12 +1,13 @@
 import { JSDOM } from 'jsdom';
-import type { HtmlResult, IndexEntry, MetaRefresh } from 'src/types.js';
+import type { HtmlResult, IndexEntry, Mail, MetaRefresh } from 'src/types.js';
 import { parseDateIndex } from './date-index.js';
 import { parseMessage } from './message.js';
+import { TaskPool } from 'src/network/task-pool.js';
 
 const BASE = 'https://mailarchive.ietf.org';
 const MAX_HOPS = 5;
 
-export async function getDateIndex(
+export async function fetchDateIndex(
   workingGroup: string,
   bucket: string
 ): Promise<IndexEntry[]> {
@@ -24,6 +25,51 @@ export async function getMessage(workingGroup: string, hash: string) {
   const raw = await res.text();
 
   return parseMessage(raw);
+}
+
+export async function fetchDocumentByHashes(
+  workingGroup: string,
+  hashes: string[]
+) {
+  const taskPool = new TaskPool();
+
+  const result = await Promise.allSettled(
+    hashes.map((h) => taskPool.schedule(() => getMessage(workingGroup, h)))
+  );
+
+  const documents: Mail[] = [];
+
+  for (const r of result) {
+    if (r.status === 'fulfilled') {
+      documents.push(r.value);
+      continue;
+    }
+  }
+
+  return documents;
+}
+
+export async function fetchDocumentHashesByYear(
+  workingGroup: string,
+  year: string
+): Promise<string[]> {
+  const hashes: string[] = [];
+
+  for (let month = 1; month <= 12; month++) {
+    const bucket = `${year}-${String(month).padStart(2, '0')}`;
+    const endPoint = `${BASE}/arch/browse/static/${workingGroup}/${bucket}`;
+
+    const { html, destinationUrl } = await fetchHtml(endPoint);
+    const dateIndex = parseDateIndex(html);
+
+    dateIndex.forEach((d) => hashes.push(d.hash));
+
+    if (destinationUrl.endsWith(`${year}/`)) {
+      break;
+    }
+  }
+
+  return hashes;
 }
 
 async function fetchHtml(url: string, maxHops = 5): Promise<HtmlResult> {
@@ -54,12 +100,13 @@ async function fetchHtml(url: string, maxHops = 5): Promise<HtmlResult> {
 
 function findMetaRefresh(document: Document): MetaRefresh | null {
   const meta = document.querySelector('meta[http-equiv="refresh" i]');
-  const content = meta?.getAttribute('content');
+  if (meta === null) return null;
 
-  if (content == null) return null;
+  const content = meta.getAttribute('content');
+  if (content === null) return null;
 
   const match = /^\s*(\d+)\s*(?:;\s*url\s*=\s*(.*?))?\s*$/i.exec(content);
-  if (match == null) return null;
+  if (match === null) return null;
 
   const delaySeconds = Number(match[1]);
   const target = unquote(match[2]);
