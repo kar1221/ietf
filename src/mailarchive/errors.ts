@@ -1,6 +1,7 @@
 export class HttpError extends Error {
   public constructor(statusCode: number, endPoint: string) {
     super(`Http ${statusCode.toString()} for ${endPoint}`);
+    this.name = 'HttpError';
   }
 }
 
