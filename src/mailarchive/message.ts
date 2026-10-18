@@ -1,5 +1,5 @@
 import PostalMime, { type Address } from 'postal-mime';
-import { ParseError } from 'src/errors.js';
+import { ParseError } from 'src/mailarchive/errors.js';
 import type { EmailAddress, IETFDocument } from 'src/mailarchive/types.js';
 
 function toAddressList(list?: Address[]): EmailAddress[] {
