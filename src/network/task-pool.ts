@@ -36,7 +36,7 @@ export class TaskPool {
   }
 
   private pump(): void {
-    if (this.wakeTimer === null) return;
+    if (this.wakeTimer) return;
 
     while (this.running < this.maxConcurrent && this.queue.length > 0) {
       const now = Date.now();
