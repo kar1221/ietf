@@ -6,12 +6,12 @@ import type {
 import { parseDateIndex } from './date-index.js';
 import { parseMessage } from './message.js';
 import { TaskPool } from 'src/network/task-pool.js';
-import { HttpError } from 'src/errors.js';
+import { HttpError } from 'src/mailarchive/errors.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
 const UA =
-  'ietf-doc-analyzer/0.1 (+https://github.com/kar1221; khyeong191@gmail.com)';
+  'ietf-doc-analyzer/0.1 (+https://github.com/kar1221/ietf; khyeong191@gmail.com)';
 
 export class MailArchiveClient {
   private readonly BASE = 'https://mailarchive.ietf.org';
