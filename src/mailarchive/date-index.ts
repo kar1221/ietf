@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'src/types.js';
+import type { IndexEntry } from 'src/mailarchive/types.js';
 import { JSDOM } from 'jsdom';
 
 export function parseDateIndex(html: string): IndexEntry[] {
