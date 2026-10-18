@@ -1,7 +1,13 @@
 export class HttpError extends Error {
+  public readonly statusCode: number;
+  public readonly endPoint: string;
+
   public constructor(statusCode: number, endPoint: string) {
     super(`Http ${statusCode.toString()} for ${endPoint}`);
     this.name = 'HttpError';
+
+    this.statusCode = statusCode;
+    this.endPoint = endPoint;
   }
 }
 
