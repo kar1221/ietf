@@ -11,13 +11,13 @@ const UA =
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
-type EmailToPerson = Map<string, PersonInfo>;
-
 export class DatatrackerClient {
   private readonly BASE = 'https://datatracker.ietf.org';
 
-  public async fetchPeopleInfo(emails: string[]): Promise<EmailToPerson> {
-    const result: EmailToPerson = new Map<string, PersonInfo>();
+  public async fetchPeopleInfo(
+    emails: string[]
+  ): Promise<Map<string, PersonInfo>> {
+    const result = new Map<string, PersonInfo>();
 
     for (const email of chunked(emails, 50)) {
       const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=200`;
@@ -30,6 +30,16 @@ export class DatatrackerClient {
     }
 
     return result;
+  }
+
+  public async fetchPersonInfo(email: string): Promise<PersonInfo | null> {
+    const path = `/api/v1/person/email/?address=${email}`;
+
+    const rows = await this.fetchAll<PersonInfo>(path);
+
+    if (rows.length === 0) return null;
+
+    return rows[0];
   }
 
   public async fetchMeetingRegistration(
