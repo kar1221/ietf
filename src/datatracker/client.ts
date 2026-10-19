@@ -7,7 +7,7 @@ import type {
   TastypieResponse
 } from './types.js';
 import { Logger } from 'src/logger.js';
-import { UserAgent } from 'src/network/constants.js';
+import { UserAgent, FetchLimit } from 'src/network/constants.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
@@ -20,7 +20,7 @@ export class DatatrackerClient {
     const result = new Map<string, PersonInfo>();
 
     for (const email of chunked(emails, 50)) {
-      const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=1000`;
+      const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=${FetchLimit.toString()}`;
 
       const rows = await this.fetchAll<PersonInfo>(path);
 
@@ -45,7 +45,7 @@ export class DatatrackerClient {
   public async fetchMeetingRegistrations(
     personId: number
   ): Promise<MeetingRegistration[]> {
-    const path = `/api/v1/meeting/registration/?person=${personId.toString()}&limit=1000`;
+    const path = `/api/v1/meeting/registration/?person=${personId.toString()}&limit=${FetchLimit.toString()}`;
 
     const res = await this.fetchAll<MeetingRegistration>(path);
 
@@ -53,7 +53,7 @@ export class DatatrackerClient {
   }
 
   public async fetchDocHistories(personId: number): Promise<DocHistory[]> {
-    const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=1000`;
+    const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=${FetchLimit.toString()}`;
 
     const res = await this.fetchAll<DocHistory>(path);
 
