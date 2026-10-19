@@ -8,11 +8,9 @@ import { parseMessage } from './message.js';
 import { TaskPool } from 'src/network/task-pool.js';
 import { HttpError } from 'src/mailarchive/errors.js';
 import { Logger } from 'src/logger.js';
+import { UserAgent } from 'src/network/constants.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
-
-const UA =
-  'ietf-doc-analyzer/0.1 (+https://github.com/kar1221/ietf; khyeong191@gmail.com)';
 
 export class MailArchiveClient {
   private readonly BASE = 'https://mailarchive.ietf.org';
@@ -141,7 +139,9 @@ export class MailArchiveClient {
 
   private async fetchScheduled(endPoint: string): Promise<Response> {
     return pool.schedule(async () => {
-      const res = await fetch(endPoint, { headers: { 'user-agent': UA } });
+      const res = await fetch(endPoint, {
+        headers: { 'user-agent': UserAgent }
+      });
 
       Logger.debug(`Fetching ${endPoint}`, 'MailArchiveClient');
 

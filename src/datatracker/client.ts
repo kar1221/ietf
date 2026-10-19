@@ -7,9 +7,7 @@ import type {
   TastypieResponse
 } from './types.js';
 import { Logger } from 'src/logger.js';
-
-const UA =
-  'ietf-doc-analyzer/0.1 (+https://github.com/kar1221/ietf; khyeong191@gmail.com)';
+import { UserAgent } from 'src/network/constants.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
@@ -55,7 +53,7 @@ export class DatatrackerClient {
   }
 
   public async fetchDocHistories(personId: number): Promise<DocHistory[]> {
-    const path = `/api/v1/doc/dochistoryauthor/?person${personId.toString()}&limit=20`;
+    const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=20`;
 
     const res = await this.fetchAll<DocHistory>(path);
 
@@ -89,7 +87,7 @@ export class DatatrackerClient {
       const res = await fetch(`${this.BASE}${path}`, {
         headers: {
           Accept: 'application/json',
-          'user-agent': UA
+          'user-agent': UserAgent
         }
       });
 
