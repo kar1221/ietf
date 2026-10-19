@@ -2,14 +2,17 @@ import { TaskPool } from 'src/network/task-pool.js';
 import { DatatrackerError } from './errors.js';
 import type {
   DocHistory,
+  DocHistoryAuthor,
   Meeting,
   MeetingRegistration,
-  PersonInfo,
+  Person,
+  PersonEmail,
   TastypieResponse
 } from './types.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent, FetchLimit } from 'src/network/constants.js';
 import type { ICache } from 'src/cache/cache.js';
+import { InMemoryCache } from 'src/cache/in-memory.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
@@ -18,19 +21,19 @@ export class DatatrackerClient {
 
   private meetingCache: ICache<number, Meeting>;
 
-  public constructor(meetingCache: ICache<number, Meeting>) {
-    this.meetingCache = meetingCache;
+  public constructor(meetingCache?: ICache<number, Meeting>) {
+    this.meetingCache = meetingCache ?? new InMemoryCache<number, Meeting>();
   }
 
-  public async fetchPeopleInfo(
+  public async fetchPeopleEmail(
     emails: string[]
-  ): Promise<Map<string, PersonInfo>> {
-    const result = new Map<string, PersonInfo>();
+  ): Promise<Map<string, PersonEmail>> {
+    const result = new Map<string, PersonEmail>();
 
     for (const email of chunked(emails, 50)) {
       const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=${FetchLimit.toString()}`;
 
-      const rows = await this.fetchAll<PersonInfo>(path);
+      const rows = await this.fetchAll<PersonEmail>(path);
 
       for (const row of rows) {
         result.set(row.address.toLowerCase(), row);
@@ -40,14 +43,32 @@ export class DatatrackerClient {
     return result;
   }
 
-  public async fetchPersonInfo(email: string): Promise<PersonInfo | null> {
+  public async fetchPersonEmail(email: string): Promise<PersonEmail | null> {
     const path = `/api/v1/person/email/?address=${email}`;
 
-    const rows = await this.fetchAll<PersonInfo>(path);
+    const rows = await this.fetchAll<PersonEmail>(path);
 
     if (rows.length === 0) return null;
 
     return rows[0];
+  }
+
+  public async fetchPerson(id: number): Promise<Person | null> {
+    const path = `/api/v1/person/person/?id=${id.toString()}`;
+
+    const res = await this.fetchAll<Person>(path);
+
+    if (res.length === 0) return null;
+
+    return res[0];
+  }
+
+  public async fetchPeople(ids: number[]): Promise<Person[]> {
+    const path = `/api/v1/person/person/?id__in=${ids.join(',')}`;
+
+    const res = await this.fetchAll<Person>(path);
+
+    return res;
   }
 
   public async fetchMeeting(meetingId: number): Promise<Meeting | null> {
@@ -75,16 +96,43 @@ export class DatatrackerClient {
     return res;
   }
 
-  public async fetchDocHistories(personId: number): Promise<DocHistory[]> {
+  public async fetchDocHistoriesAuthor(
+    personId: number
+  ): Promise<DocHistoryAuthor[]> {
     const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=${FetchLimit.toString()}`;
+
+    const res = await this.fetchAll<DocHistoryAuthor>(path);
+
+    return res;
+  }
+
+  public async fetchDocHistory(documentId: number): Promise<DocHistory[]> {
+    const path = `/api/v1/doc/dochistory/?id=${documentId.toString()}&limit=${FetchLimit.toString()}`;
 
     const res = await this.fetchAll<DocHistory>(path);
 
     return res;
   }
 
+  public async fetchDocHistoriesDates(
+    ids: number[]
+  ): Promise<Map<number, Date>> {
+    const dates = new Map<number, Date>();
+
+    for (const id of chunked(ids, 150)) {
+      const path = `/api/v1/doc/dochistory/?id__in=${id.join(',')}&limit=${FetchLimit.toString()}`;
+      const res = await this.fetchAll<DocHistory>(path);
+
+      res.forEach((r) => {
+        dates.set(r.id, new Date(r.time));
+      });
+    }
+
+    return dates;
+  }
+
   public async fetchAffiliations(personId: number): Promise<string[]> {
-    const documentHistories = await this.fetchDocHistories(personId);
+    const documentHistories = await this.fetchDocHistoriesAuthor(personId);
     const meetingRegistrations = await this.fetchMeetingRegistrations(personId);
 
     const affiliationsRaw = [
@@ -95,7 +143,7 @@ export class DatatrackerClient {
     const affiliations = new Set<string>();
 
     affiliationsRaw.forEach((aff) => {
-      const a = aff.trim();
+      const a = aff.trim().toLowerCase();
 
       if (a === '') return;
 
@@ -136,7 +184,7 @@ export class DatatrackerClient {
   }
 }
 
-function extractId(uri: string): number {
+export function extractId(uri: string): number {
   const result = Number(/(\d+)\/$/.exec(uri)?.[1]);
 
   Logger.debug(`${uri} --- ${result.toString()}`);

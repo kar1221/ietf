@@ -9,13 +9,18 @@ export interface TastypieResponse<T> {
   objects: T[];
 }
 
-export interface PersonInfo {
-  id: number;
+export interface PersonEmail {
   active: boolean;
   address: string;
   origin: string;
   person: string;
   primary: boolean;
+  time: string;
+}
+
+export interface Person {
+  id: number;
+  ascii: string;
   time: string;
 }
 
@@ -34,9 +39,16 @@ export interface Meeting {
   date: string;
 }
 
-export interface DocHistory {
+export interface DocHistoryAuthor {
   id: number;
   affiliation: string;
   document: string;
   person: string;
+}
+
+export interface DocHistory {
+  id: number;
+  name: string;
+  title: string;
+  time: string;
 }
