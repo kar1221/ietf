@@ -26,3 +26,9 @@ export interface MeetingRegistration {
   first_name: string;
   last_name: string;
 }
+
+export interface DocHistory {
+  affiliation: string;
+  document: string;
+  person: string;
+}

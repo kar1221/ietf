@@ -1,10 +1,12 @@
 import { TaskPool } from 'src/network/task-pool.js';
 import { DatatrackerError } from './errors.js';
 import type {
+  DocHistory,
   MeetingRegistration,
   PersonInfo,
   TastypieResponse
 } from './types.js';
+import { Logger } from 'src/logger.js';
 
 const UA =
   'ietf-doc-analyzer/0.1 (+https://github.com/kar1221/ietf; khyeong191@gmail.com)';
@@ -52,6 +54,36 @@ export class DatatrackerClient {
     return res;
   }
 
+  public async fetchDocHistory(personId: number): Promise<DocHistory[]> {
+    const path = `/api/v1/doc/dochistoryauthor/?person${personId.toString()}&limit=20`;
+
+    const res = await this.fetchAll<DocHistory>(path);
+
+    return res;
+  }
+
+  public async fetchAffiliations(personId: number): Promise<string[]> {
+    const documentHistory = await this.fetchDocHistory(personId);
+    const meetingRegistration = await this.fetchMeetingRegistration(personId);
+
+    const affiliationsRaw = [
+      ...documentHistory.map((d) => d.affiliation),
+      ...meetingRegistration.map((m) => m.affiliation)
+    ];
+
+    const affiliations = new Set<string>();
+
+    affiliationsRaw.forEach((aff) => {
+      const a = aff.trim();
+
+      if (a === '') return;
+
+      affiliations.add(a);
+    });
+
+    return [...affiliations];
+  }
+
   private async fetchJson<T>(path: string): Promise<T> {
     return pool.schedule(async () => {
       const res = await fetch(`${this.BASE}${path}`, {
@@ -60,6 +92,8 @@ export class DatatrackerClient {
           'user-agent': UA
         }
       });
+
+      Logger.debug(`Fetching ${path}`, 'DatatrackerClient');
 
       if (!res.ok) throw new DatatrackerError(res.status, path);
 
