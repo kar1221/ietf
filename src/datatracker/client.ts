@@ -44,7 +44,7 @@ export class DatatrackerClient {
     return rows[0];
   }
 
-  public async fetchMeetingRegistration(
+  public async fetchMeetingRegistrations(
     personId: number
   ): Promise<MeetingRegistration[]> {
     const path = `/api/v1/meeting/registration/?person=${personId.toString()}&limit=20`;
@@ -54,7 +54,7 @@ export class DatatrackerClient {
     return res;
   }
 
-  public async fetchDocHistory(personId: number): Promise<DocHistory[]> {
+  public async fetchDocHistories(personId: number): Promise<DocHistory[]> {
     const path = `/api/v1/doc/dochistoryauthor/?person${personId.toString()}&limit=20`;
 
     const res = await this.fetchAll<DocHistory>(path);
@@ -63,12 +63,12 @@ export class DatatrackerClient {
   }
 
   public async fetchAffiliations(personId: number): Promise<string[]> {
-    const documentHistory = await this.fetchDocHistory(personId);
-    const meetingRegistration = await this.fetchMeetingRegistration(personId);
+    const documentHistories = await this.fetchDocHistories(personId);
+    const meetingRegistrations = await this.fetchMeetingRegistrations(personId);
 
     const affiliationsRaw = [
-      ...documentHistory.map((d) => d.affiliation),
-      ...meetingRegistration.map((m) => m.affiliation)
+      ...documentHistories.map((d) => d.affiliation),
+      ...meetingRegistrations.map((m) => m.affiliation)
     ];
 
     const affiliations = new Set<string>();
