@@ -20,7 +20,7 @@ export class DatatrackerClient {
     const result = new Map<string, PersonInfo>();
 
     for (const email of chunked(emails, 50)) {
-      const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=200`;
+      const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=1000`;
 
       const rows = await this.fetchAll<PersonInfo>(path);
 
@@ -45,7 +45,7 @@ export class DatatrackerClient {
   public async fetchMeetingRegistrations(
     personId: number
   ): Promise<MeetingRegistration[]> {
-    const path = `/api/v1/meeting/registration/?person=${personId.toString()}&limit=20`;
+    const path = `/api/v1/meeting/registration/?person=${personId.toString()}&limit=1000`;
 
     const res = await this.fetchAll<MeetingRegistration>(path);
 
@@ -53,7 +53,7 @@ export class DatatrackerClient {
   }
 
   public async fetchDocHistories(personId: number): Promise<DocHistory[]> {
-    const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=20`;
+    const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=1000`;
 
     const res = await this.fetchAll<DocHistory>(path);
 
