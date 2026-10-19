@@ -2,17 +2,25 @@ import { TaskPool } from 'src/network/task-pool.js';
 import { DatatrackerError } from './errors.js';
 import type {
   DocHistory,
+  Meeting,
   MeetingRegistration,
   PersonInfo,
   TastypieResponse
 } from './types.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent, FetchLimit } from 'src/network/constants.js';
+import type { ICache } from 'src/cache/cache.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
 export class DatatrackerClient {
   private readonly BASE = 'https://datatracker.ietf.org';
+
+  private meetingCache: ICache<number, Meeting>;
+
+  public constructor(meetingCache: ICache<number, Meeting>) {
+    this.meetingCache = meetingCache;
+  }
 
   public async fetchPeopleInfo(
     emails: string[]
@@ -40,6 +48,21 @@ export class DatatrackerClient {
     if (rows.length === 0) return null;
 
     return rows[0];
+  }
+
+  public async fetchMeeting(meetingId: number): Promise<Meeting | null> {
+    const hit = this.meetingCache.get(meetingId);
+    if (hit) return hit;
+
+    const path = `/api/v1/meeting/meeting/?id=${meetingId.toString()}&limit=${FetchLimit.toString()}`;
+
+    const res = await this.fetchAll<Meeting>(path);
+
+    if (res.length === 0) return null;
+
+    this.meetingCache.set(meetingId, res[0]);
+
+    return res[0];
   }
 
   public async fetchMeetingRegistrations(
@@ -111,6 +134,14 @@ export class DatatrackerClient {
 
     return out;
   }
+}
+
+function extractId(uri: string): number {
+  const result = Number(/(\d+)\/$/.exec(uri)?.[1]);
+
+  Logger.debug(`${uri} --- ${result.toString()}`);
+
+  return result;
 }
 
 function chunked<T>(arr: T[], size: number): T[][] {
