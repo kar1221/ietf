@@ -7,6 +7,7 @@ import { parseDateIndex } from './date-index.js';
 import { parseMessage } from './message.js';
 import { TaskPool } from 'src/network/task-pool.js';
 import { HttpError } from 'src/mailarchive/errors.js';
+import { Logger } from 'src/logger.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
@@ -42,8 +43,9 @@ export class MailArchiveClient {
 
     res.forEach((r, i) => {
       if (r.status === 'rejected') {
-        console.error(
-          `[fetchDocumentByYear] ${hashes[i]} failed: ${r.reason instanceof Error ? r.reason.message : 'Unknown reason'}`
+        Logger.error(
+          `${hashes[i]} failed: ${r.reason instanceof Error ? r.reason.message : 'Unknown reason'}`,
+          'MailArchiveClient'
         );
       }
     });
@@ -140,6 +142,8 @@ export class MailArchiveClient {
   private async fetchScheduled(endPoint: string): Promise<Response> {
     return pool.schedule(async () => {
       const res = await fetch(endPoint, { headers: { 'user-agent': UA } });
+
+      Logger.debug(`Fetching ${endPoint}`, 'MailArchiveClient');
 
       if (!res.ok) throw new HttpError(res.status, endPoint);
 

@@ -3,5 +3,15 @@ import 'dotenv/config';
 import z from 'zod';
 
 const envSchema = z.object({
-  DB_PATH: z.string('Must provide a path to db')
+  DEBUG: z.coerce.boolean().optional().default(false)
 });
+
+const parse = envSchema.safeParse(process.env);
+
+if (!parse.success) {
+  throw new Error(
+    'Enviroment variable did not set up correctly: ' + parse.error.message
+  );
+}
+
+export default parse.data;
