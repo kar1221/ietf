@@ -10,6 +10,7 @@ export interface TastypieResponse<T> {
 }
 
 export interface PersonInfo {
+  id: number;
   active: boolean;
   address: string;
   origin: string;
@@ -19,6 +20,7 @@ export interface PersonInfo {
 }
 
 export interface MeetingRegistration {
+  id: number;
   affiliation: string;
   meeting: string;
   person: string;
@@ -27,7 +29,13 @@ export interface MeetingRegistration {
   last_name: string;
 }
 
+export interface Meeting {
+  id: number;
+  date: string;
+}
+
 export interface DocHistory {
+  id: number;
   affiliation: string;
   document: string;
   person: string;
