@@ -1,11 +1,15 @@
 import 'dotenv/config';
+import path from 'path';
 
 import z from 'zod';
 
 const envSchema = z.object({
   DEBUG: z
     .stringbool("Enviroment Variable 'DEBUG' should have a boolean-ish value")
-    .default(false)
+    .default(false),
+  DATAPATH: z
+    .string('')
+    .transform((t) => path.resolve(import.meta.dirname, '..', t))
 });
 
 const parse = envSchema.safeParse(process.env);

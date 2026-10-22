@@ -15,7 +15,7 @@ const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 export class MailArchiveClient {
   private readonly BASE = 'https://mailarchive.ietf.org';
 
-  private workingGroup: string;
+  private readonly workingGroup: string;
 
   public constructor(workingGroup: string) {
     this.workingGroup = workingGroup;
