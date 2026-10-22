@@ -25,7 +25,7 @@ export class DatatrackerClient {
     this.meetingCache = meetingCache ?? new InMemoryCache<number, Meeting>();
   }
 
-  public async fetchPeopleEmail(
+  public async fetchPeopleByEmails(
     emails: string[]
   ): Promise<Map<string, PersonEmail>> {
     const result = new Map<string, PersonEmail>();
@@ -43,7 +43,7 @@ export class DatatrackerClient {
     return result;
   }
 
-  public async fetchPersonEmail(email: string): Promise<PersonEmail | null> {
+  public async fetchPersonByEmail(email: string): Promise<PersonEmail | null> {
     const path = `/api/v1/person/email/?address=${email}`;
 
     const rows = await this.fetchAll<PersonEmail>(path);
