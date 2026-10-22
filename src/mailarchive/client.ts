@@ -16,10 +16,10 @@ const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 export class MailArchiveClient {
   private readonly BASE = 'https://mailarchive.ietf.org';
 
-  private readonly workingGroup: string;
+  private readonly list: string;
 
-  public constructor(workingGroup: string) {
-    this.workingGroup = workingGroup;
+  public constructor(list: string) {
+    this.list = list;
   }
 
   /**
@@ -29,7 +29,7 @@ export class MailArchiveClient {
    * @returns {Promise<MailMessage>}
    */
   public async fetchDocumentByHash(hash: string): Promise<MailMessage> {
-    const endPoint = `${this.BASE}/arch/msg/${this.workingGroup}/${hash}/download`;
+    const endPoint = `${this.BASE}/arch/msg/${this.list}/${hash}/download`;
 
     const res = await this.fetchScheduled(endPoint);
     const raw = await res.text();
@@ -63,7 +63,7 @@ export class MailArchiveClient {
       );
     }
 
-    let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.workingGroup}`;
+    let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
 
     if (start) {
       endPoint += `&start=${start}`;
@@ -76,13 +76,13 @@ export class MailArchiveClient {
     const res = await this.fetchScheduled(endPoint);
     const data = (await res.json()) as MsgCount;
 
-    if (!data.msg_counts[this.workingGroup]) {
+    if (!data.msg_counts[this.list]) {
       throw new BadParametersError(
-        `${this.workingGroup} doesn't exists on the mailarchive server. Did you make a typo?`
+        `${this.list} doesn't exists on the mailarchive server. Did you make a typo?`
       );
     }
 
-    return data.msg_counts[this.workingGroup];
+    return data.msg_counts[this.list];
   }
 
   /**
@@ -132,7 +132,7 @@ export class MailArchiveClient {
   public async fetchDateIndexByBucket(
     bucket: string
   ): Promise<DateIndexFetchResult> {
-    const endPoint = `${this.BASE}/arch/browse/static/${this.workingGroup}/${bucket}`;
+    const endPoint = `${this.BASE}/arch/browse/static/${this.list}/${bucket}`;
 
     let res = await this.fetchScheduled(endPoint);
     let html = await res.text();
