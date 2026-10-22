@@ -28,3 +28,11 @@ export class WorkingGroupNotAvailableError extends Error {
     this.name = 'WorkingGroupNotAvailableError';
   }
 }
+
+export class BadParametersError extends Error {
+  public constructor(message: string) {
+    super(message);
+
+    this.name = 'BadParametersError';
+  }
+}

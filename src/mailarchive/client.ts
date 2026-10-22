@@ -1,12 +1,13 @@
 import { JSDOM } from 'jsdom';
 import type {
   DateIndexFetchResult,
-  IETFDocument
+  IETFDocument,
+  MsgCount
 } from 'src/mailarchive/types.js';
 import { parseDateIndex } from './date-index.js';
 import { parseMessage } from './message.js';
 import { TaskPool } from 'src/network/task-pool.js';
-import { HttpError } from 'src/mailarchive/errors.js';
+import { BadParametersError, HttpError } from 'src/mailarchive/errors.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent } from 'src/network/constants.js';
 
@@ -21,6 +22,12 @@ export class MailArchiveClient {
     this.workingGroup = workingGroup;
   }
 
+  /**
+   * Fetch the correspond document with the given hash in this working group.
+   * Will throw if no document with this hash can be found in this working group.
+   * @param hash Hash of the document
+   * @returns {Promise<IETFDocument>}
+   */
   public async fetchDocumentByHash(hash: string): Promise<IETFDocument> {
     const endPoint = `${this.BASE}/arch/msg/${this.workingGroup}/${hash}/download`;
 
@@ -30,6 +37,59 @@ export class MailArchiveClient {
     return parseMessage(raw, hash);
   }
 
+  /**
+   * Fetch the total message count in this working group
+   *
+   * If `start` and `end` is not provided, it will returns the message count
+   * of the current month.
+   *
+   * If `start` is provided but `end` is not, it will returns the message count
+   * since `start` to the current date
+   *
+   * If `end` is provided but `start` is missing, the promise will be rejected.
+   *
+   * @param start {string} Follows yyyy-mm-dd format. Example: 2024-07-01
+   * @param end {string} Follows yyyy-mm-dd format. Example: 2024-07-01
+   */
+
+  public async fetchMsgCounts(
+    ...args: [] | [start: string, end?: string]
+  ): Promise<number> {
+    const [start, end] = args;
+
+    if (end !== undefined && start === undefined) {
+      throw new BadParametersError(
+        '`start` must be provided while `end` is presence.'
+      );
+    }
+
+    let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.workingGroup}`;
+
+    if (start) {
+      endPoint += `&start=${start}`;
+    }
+
+    if (end) {
+      endPoint += `&end=${end}`;
+    }
+
+    const res = await this.fetchScheduled(endPoint);
+    const data = (await res.json()) as MsgCount;
+
+    if (!data.msg_counts[this.workingGroup]) {
+      throw new BadParametersError(
+        `${this.workingGroup} doesn't exists on the mailarchive server. Did you make a typo?`
+      );
+    }
+
+    return data.msg_counts[this.workingGroup];
+  }
+
+  /**
+   * Fetch entire year of document in this working group.
+   * @param year
+   * @returns {Promise<IETFDocument[]}
+   */
   public async fetchDocumentByYear(year: string): Promise<IETFDocument[]> {
     const dateIndexEntry = await this.fetchDateIndexByYear(year);
 
@@ -51,6 +111,11 @@ export class MailArchiveClient {
     return res.filter((r) => r.status === 'fulfilled').map((r) => r.value);
   }
 
+  /**
+   * Fetch all the hashes within this bucket in this working group.
+   * @param bucket {string} For example: "2024-01"
+   * @returns {Promise<string[]}
+   */
   public async fetchHashesByBucket(bucket: string): Promise<string[]> {
     const dateIndex = await this.fetchDateIndexByBucket(bucket);
 
@@ -59,6 +124,11 @@ export class MailArchiveClient {
     return hashes;
   }
 
+  /**
+   * Fetch all the indexes to the actual documents within this bucket in this working group
+   * @param bucket {string} For example: "2024-01"
+   * @returns {Promise<DateIndexFetchResult>}
+   */
   public async fetchDateIndexByBucket(
     bucket: string
   ): Promise<DateIndexFetchResult> {
@@ -82,6 +152,11 @@ export class MailArchiveClient {
     };
   }
 
+  /**
+   * Fetch all the indexes to the actual documents of the entire year in this working group.
+   * @param year {string} For example: "2024"
+   * @returns {Promise<DateIndexFetchResult[]>}
+   */
   public async fetchDateIndexByYear(
     year: string
   ): Promise<DateIndexFetchResult[]> {
