@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 import type {
   DateIndexFetchResult,
-  IETFDocument,
+  MailMessage,
   MsgCount
 } from 'src/mailarchive/types.js';
 import { parseDateIndex } from './date-index.js';
@@ -26,9 +26,9 @@ export class MailArchiveClient {
    * Fetch the correspond document with the given hash in this working group.
    * Will throw if no document with this hash can be found in this working group.
    * @param hash Hash of the document
-   * @returns {Promise<IETFDocument>}
+   * @returns {Promise<MailMessage>}
    */
-  public async fetchDocumentByHash(hash: string): Promise<IETFDocument> {
+  public async fetchDocumentByHash(hash: string): Promise<MailMessage> {
     const endPoint = `${this.BASE}/arch/msg/${this.workingGroup}/${hash}/download`;
 
     const res = await this.fetchScheduled(endPoint);
@@ -88,9 +88,9 @@ export class MailArchiveClient {
   /**
    * Fetch entire year of document in this working group.
    * @param year
-   * @returns {Promise<IETFDocument[]}
+   * @returns {Promise<MailMessage[]}
    */
-  public async fetchDocumentByYear(year: string): Promise<IETFDocument[]> {
+  public async fetchDocumentByYear(year: string): Promise<MailMessage[]> {
     const dateIndexEntry = await this.fetchDateIndexByYear(year);
 
     const hashes = dateIndexEntry.flatMap((d) => d.entry.map((d) => d.hash));

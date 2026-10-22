@@ -3,7 +3,7 @@ export interface EmailAddress {
   address: string;
 }
 
-export interface IETFDocument {
+export interface MailMessage {
   subject: string;
   from: EmailAddress;
   to: EmailAddress[];

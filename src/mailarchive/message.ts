@@ -1,6 +1,6 @@
 import PostalMime, { type Address } from 'postal-mime';
 import { ParseError } from 'src/mailarchive/errors.js';
-import type { EmailAddress, IETFDocument } from 'src/mailarchive/types.js';
+import type { EmailAddress, MailMessage } from 'src/mailarchive/types.js';
 
 function toAddressList(list?: Address[]): EmailAddress[] {
   const addresses = list ?? [];
@@ -25,7 +25,7 @@ function safeDate(raw?: string): Date | null {
 export async function parseMessage(
   emailRaw: string,
   hash?: string
-): Promise<IETFDocument> {
+): Promise<MailMessage> {
   const parsed = await new PostalMime().parse(emailRaw);
 
   if (!parsed.from?.address) {
