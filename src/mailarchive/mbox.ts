@@ -18,16 +18,18 @@ export class MBox {
     this.workingGroup = workingGroup;
   }
 
-  public async getFiles(): Promise<string[]> {
+  public async getAvailableBuckets(): Promise<string[]> {
     const files = await readdir(`${env.DATAPATH}/${this.workingGroup}`);
 
-    return files;
+    const buckets = files.map((f) => f.replace('.mail', ''));
+
+    return buckets;
   }
 
-  public async *read(filename: string): AsyncGenerator<string> {
+  public async *read(bucket: string): AsyncGenerator<string> {
     const lines = createInterface({
       input: createReadStream(
-        `${env.DATAPATH}/${this.workingGroup}/${filename}`,
+        `${env.DATAPATH}/${this.workingGroup}/${bucket}.mail`,
         { encoding: 'utf-8' }
       ),
       crlfDelay: Infinity
