@@ -37,7 +37,7 @@ export async function parseMessage(
 
   const from: EmailAddress = {
     name: parsed.from.name,
-    address: parsed.from.address
+    address: parsed.from.address.toLowerCase()
   };
   const to = toAddressList(parsed.to);
   const cc = toAddressList(parsed.cc);
