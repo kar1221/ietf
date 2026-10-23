@@ -1,4 +1,4 @@
-import type { ICache } from './cache.js';
+import type { ICache } from './interface.js';
 
 export class InMemoryCache<K, V> implements ICache<K, V> {
   private cache = new Map<K, V>();

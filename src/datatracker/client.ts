@@ -11,7 +11,7 @@ import type {
 } from './types.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent, FetchLimit } from 'src/network/constants.js';
-import type { ICache } from 'src/cache/cache.js';
+import type { ICache } from 'src/cache/interface.js';
 import { InMemoryCache } from 'src/cache/in-memory.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
