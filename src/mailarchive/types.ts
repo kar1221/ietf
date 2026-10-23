@@ -10,7 +10,7 @@ export interface MailMessage {
   cc: EmailAddress[];
   content: string;
   date: Date | null;
-  messageId: string;
+  messageId: string | null;
   inReplyTo: string | null;
   references: string[];
 }

@@ -43,7 +43,7 @@ export async function parseMessage(
   const cc = toAddressList(parsed.cc);
 
   const date = safeDate(parsed.date);
-  const messageId = parsed.messageId ?? '';
+  const messageId = parsed.messageId?.trim() ?? null;
 
   const inReplyTo = parsed.inReplyTo ?? null;
   const references = parseReferences(parsed.references);
