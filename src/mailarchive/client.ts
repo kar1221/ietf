@@ -77,9 +77,7 @@ export class MailArchiveClient {
     const data = (await res.json()) as MsgCount;
 
     if (!data.msg_counts[this.list]) {
-      throw new BadParametersError(
-        `${this.list} doesn't exists on the mailarchive server. Did you make a typo?`
-      );
+      return 0;
     }
 
     return data.msg_counts[this.list];
