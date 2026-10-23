@@ -8,7 +8,7 @@ export class MBox {
   private workingGroup: string;
 
   private static readonly SEP =
-    /^From \S+ (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[ \t]+\d{1,2} \d{2}:\d{2}:\d{2} \d{4}\r?$/gm;
+    /^From \S+ (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun) (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[ \t]+\d{1,2} \d{2}:\d{2}:\d{2} \d{4}\r?$/;
 
   public constructor(workingGroup: string) {
     if (!this.isWorkingGroupAvailable(workingGroup)) {
