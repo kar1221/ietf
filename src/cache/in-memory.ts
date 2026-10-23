@@ -8,7 +8,7 @@ export class InMemoryCache<K, V> implements ICache<K, V> {
   }
 
   public get(key: K): V | undefined {
-    return this.get(key);
+    return this.cache.get(key);
   }
 
   public invalidate(key: K): boolean {
