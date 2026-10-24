@@ -1,10 +1,9 @@
-import { JSDOM } from 'jsdom';
 import type {
   DateIndexFetchResult,
   MailMessage,
   MsgCount
 } from 'src/mailarchive/types.js';
-import { parseDateIndex } from './date-index.js';
+import { getRedirectUrl, parseDateIndex } from './date-index.js';
 import { parseMessage } from './message.js';
 import { TaskPool } from 'src/network/task-pool.js';
 import { BadParametersError, HttpError } from 'src/mailarchive/errors.js';
@@ -135,7 +134,7 @@ export class MailArchiveClient {
     let res = await this.fetchScheduled(endPoint);
     let html = await res.text();
 
-    const redirectUrl = this.getRedirectUrl(html);
+    const redirectUrl = getRedirectUrl(html);
 
     if (redirectUrl) {
       res = await this.fetchScheduled(redirectUrl);
@@ -191,25 +190,6 @@ export class MailArchiveClient {
     );
   }
 
-  private getRedirectUrl(rawHtml: string): string | null {
-    const { document } = new JSDOM(rawHtml).window;
-
-    const meta = document.querySelector('meta[http-equiv="refresh" i]');
-    if (meta === null) return null;
-
-    const content = meta.getAttribute('content');
-    if (content === null) return null;
-
-    const match = /^\s*(\d+)\s*(?:;\s*url\s*=\s*(.*?))?\s*$/i.exec(content);
-    if (match === null) return null;
-
-    const target = this.unquote(match[2]);
-
-    if (target === '') return null;
-
-    return new URL(target, document.baseURI).href;
-  }
-
   private async fetchScheduled(endPoint: string): Promise<Response> {
     return pool.schedule(async () => {
       const res = await fetch(endPoint, {
@@ -222,19 +202,5 @@ export class MailArchiveClient {
 
       return res;
     });
-  }
-
-  private unquote(value: string): string {
-    const t = value.trim();
-
-    if (
-      t.length >= 2 &&
-      (t.startsWith("'") || t.startsWith('"')) &&
-      t.at(-1) === t[0]
-    ) {
-      return t.slice(1, -1);
-    }
-
-    return t;
   }
 }
