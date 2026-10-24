@@ -28,7 +28,7 @@ export class MailArchiveClient {
    * @param hash Hash of the document
    * @returns {Promise<MailMessage>}
    */
-  public async fetchDocumentByHash(hash: string): Promise<MailMessage> {
+  public async fetchMailMessageByHash(hash: string): Promise<MailMessage> {
     const endPoint = `${this.BASE}/arch/msg/${this.list}/${hash}/download`;
 
     const res = await this.fetchScheduled(endPoint);
@@ -88,13 +88,13 @@ export class MailArchiveClient {
    * @param year
    * @returns {Promise<MailMessage[]}
    */
-  public async fetchDocumentByYear(year: string): Promise<MailMessage[]> {
+  public async fetchMailMessagesByYear(year: string): Promise<MailMessage[]> {
     const dateIndexEntry = await this.fetchDateIndexByYear(year);
 
     const hashes = dateIndexEntry.flatMap((d) => d.entry.map((d) => d.hash));
 
     const res = await Promise.allSettled(
-      hashes.map((h) => this.fetchDocumentByHash(h))
+      hashes.map((h) => this.fetchMailMessageByHash(h))
     );
 
     res.forEach((r, i) => {
