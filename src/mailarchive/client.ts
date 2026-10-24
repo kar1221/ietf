@@ -167,7 +167,7 @@ export class MailArchiveClient {
     }
 
     const rest = await Promise.allSettled(
-      buckets.map((b) => this.fetchDateIndexByBucket(b))
+      buckets.slice(1).map((b) => this.fetchDateIndexByBucket(b))
     );
 
     return [
