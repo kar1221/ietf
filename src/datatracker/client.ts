@@ -166,7 +166,7 @@ export class DatatrackerClient {
 
       if (!res.ok) throw new DatatrackerError(res.status, path);
 
-      return res.json() as Promise<T>;
+      return await res.json();
     });
   }
 
