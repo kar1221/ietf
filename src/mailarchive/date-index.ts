@@ -1,5 +1,7 @@
 import type { IndexEntry } from 'src/mailarchive/types.js';
 import { JSDOM } from 'jsdom';
+import { Logger } from 'src/logger.js';
+import { MailArchiveClient } from './client.js';
 
 export function parseDateIndex(html: string): IndexEntry[] {
   let date = '';
@@ -52,7 +54,9 @@ export function getRedirectUrl(rawHtml: string): string | null {
 
   if (target === '') return null;
 
-  return new URL(target, document.baseURI).href;
+  Logger.debug(document.baseURI, 'DateIndex.getRedirectUrl');
+
+  return new URL(target, MailArchiveClient.BASE).href;
 }
 
 export function unquote(value: string): string {

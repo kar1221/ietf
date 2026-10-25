@@ -14,7 +14,7 @@ import { ApiResponseError } from 'src/network/errors.js';
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
 export class MailArchiveClient {
-  private readonly BASE = 'https://mailarchive.ietf.org';
+  public static readonly BASE = 'https://mailarchive.ietf.org';
 
   private readonly list: string;
 
@@ -29,7 +29,7 @@ export class MailArchiveClient {
    * @returns {Promise<MailMessage>}
    */
   public async fetchMailMessageByHash(hash: string): Promise<MailMessage> {
-    const endPoint = `${this.BASE}/arch/msg/${this.list}/${hash}/download`;
+    const endPoint = `${MailArchiveClient.BASE}/arch/msg/${this.list}/${hash}/download`;
 
     const res = await this.fetchScheduled(endPoint);
     const raw = await res.text();
@@ -76,7 +76,7 @@ export class MailArchiveClient {
       );
     }
 
-    let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
+    let endPoint = `${MailArchiveClient.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
 
     if (start) {
       endPoint += `&start=${start}`;
@@ -129,7 +129,7 @@ export class MailArchiveClient {
   public async fetchDateIndexByBucket(
     bucket: string
   ): Promise<DateIndexFetchResult> {
-    const endPoint = `${this.BASE}/arch/browse/static/${this.list}/${bucket}`;
+    const endPoint = `${MailArchiveClient.BASE}/arch/browse/static/${this.list}/${bucket}`;
 
     let res = await this.fetchScheduled(endPoint);
     let html = await res.text();
