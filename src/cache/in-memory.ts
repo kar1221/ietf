@@ -1,4 +1,4 @@
-import type { ICache } from './cache.js';
+import type { ICache } from './interface.js';
 
 export class InMemoryCache<K, V> implements ICache<K, V> {
   private cache = new Map<K, V>();
@@ -8,7 +8,7 @@ export class InMemoryCache<K, V> implements ICache<K, V> {
   }
 
   public get(key: K): V | undefined {
-    return this.get(key);
+    return this.cache.get(key);
   }
 
   public invalidate(key: K): boolean {

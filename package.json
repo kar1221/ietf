@@ -10,7 +10,8 @@
   "scripts": {
     "format": "npx prettier . --write",
     "lint": "npx eslint .",
-    "run": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "test": "vitest"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

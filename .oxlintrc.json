@@ -2,7 +2,8 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": [],
   "categories": {
-    "correctness": "off"
+    "correctness": "error",
+    "suspicious": "warn"
   },
   "options": {
     "typeAware": true
@@ -16,7 +17,8 @@
     "coverage",
     "lib",
     "node_modules",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "**/*.test.ts"
   ],
   "overrides": [
     {
@@ -203,6 +205,12 @@
         "typescript/prefer-string-starts-ends-with": "error"
       },
       "plugins": ["typescript"]
+    },
+    {
+      "files": ["**/*.test.{js,ts}"],
+      "rules": {
+        "typescript/no-floating-promises": "off"
+      }
     }
   ]
 }

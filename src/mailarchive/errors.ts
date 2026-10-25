@@ -20,3 +20,19 @@ export class ParseError extends Error {
     this.hash = hash;
   }
 }
+
+export class WorkingGroupNotAvailableError extends Error {
+  public constructor(workingGroup: string) {
+    super(`${workingGroup} cannot be found. Did you fetch it to disk?`);
+
+    this.name = 'WorkingGroupNotAvailableError';
+  }
+}
+
+export class BadParametersError extends Error {
+  public constructor(message: string) {
+    super(message);
+
+    this.name = 'BadParametersError';
+  }
+}
