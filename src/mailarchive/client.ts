@@ -9,6 +9,7 @@ import { TaskPool } from 'src/network/task-pool.js';
 import { BadParametersError, HttpError } from 'src/mailarchive/errors.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent } from 'src/network/constants.js';
+import z from 'zod';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
@@ -76,8 +77,13 @@ export class MailArchiveClient {
     }
 
     let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
+    const dateSchema = z.iso.date();
 
     if (start) {
+      const { success } = dateSchema.safeParse(start);
+
+      if (!success) return -1;
+
       endPoint += `&start=${start}`;
     }
 
