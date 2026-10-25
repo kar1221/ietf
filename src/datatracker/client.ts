@@ -22,9 +22,8 @@ import type {
   PersonEmail,
   TastypieResponse
 } from './schema.js';
-
 import zod from 'zod';
-import { ApiResponseError } from 'src/errors.js';
+import { ApiResponseError } from 'src/network/errors.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
