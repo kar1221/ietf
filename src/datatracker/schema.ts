@@ -45,7 +45,7 @@ export type MeetingRegistration = zod.infer<typeof meetingRegistrationSchema>;
 
 export const meetingSchema = zod.object({
   id: zod.number(),
-  date: zod.date()
+  date: zod.coerce.date()
 });
 
 export type Meeting = zod.infer<typeof meetingSchema>;
