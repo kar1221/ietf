@@ -8,7 +8,6 @@ import { TaskPool } from 'src/network/task-pool.js';
 import { BadParametersError, HttpError } from 'src/mailarchive/errors.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent } from 'src/network/constants.js';
-import zod from 'zod';
 import { msgCountSchema } from './schema.js';
 import { ApiResponseError } from 'src/network/errors.js';
 
@@ -78,13 +77,8 @@ export class MailArchiveClient {
     }
 
     let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
-    const dateSchema = zod.iso.date();
 
     if (start) {
-      const { success } = dateSchema.safeParse(start);
-
-      if (!success) return -1;
-
       endPoint += `&start=${start}`;
     }
 

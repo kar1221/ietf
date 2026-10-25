@@ -31,9 +31,3 @@ export interface DateIndexFetchResult {
   entry: IndexEntry[];
   didRedirect: boolean;
 }
-
-export interface MsgCount {
-  start: string;
-  end: string;
-  msg_counts: Record<string, number>;
-}
