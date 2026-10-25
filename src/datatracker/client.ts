@@ -1,5 +1,18 @@
 import { TaskPool } from 'src/network/task-pool.js';
-import { DatatrackerError } from './errors.js';
+import { ApiResponseError, DatatrackerError } from './errors.js';
+import { Logger } from 'src/logger.js';
+import { UserAgent, FetchLimit } from 'src/network/constants.js';
+import type { ICache } from 'src/cache/interface.js';
+import { InMemoryCache } from 'src/cache/in-memory.js';
+import {
+  docHistoryAuthorSchema,
+  docHistorySchema,
+  meetingRegistrationSchema,
+  meetingSchema,
+  personEmailSchema,
+  personSchema,
+  tastypieSchema
+} from './schema.js';
 import type {
   DocHistory,
   DocHistoryAuthor,
@@ -8,11 +21,9 @@ import type {
   Person,
   PersonEmail,
   TastypieResponse
-} from './types.js';
-import { Logger } from 'src/logger.js';
-import { UserAgent, FetchLimit } from 'src/network/constants.js';
-import type { ICache } from 'src/cache/interface.js';
-import { InMemoryCache } from 'src/cache/in-memory.js';
+} from './schema.js';
+
+import zod from 'zod';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
@@ -33,7 +44,7 @@ export class DatatrackerClient {
     for (const email of chunked(emails, 50)) {
       const path = `/api/v1/person/email/?address__in=${encodeURIComponent(email.join(','))}&limit=${FetchLimit.toString()}`;
 
-      const rows = await this.fetchAll<PersonEmail>(path);
+      const rows = await this.fetchAll(path, personEmailSchema);
 
       for (const row of rows) {
         result.set(row.address.toLowerCase(), row);
@@ -46,7 +57,7 @@ export class DatatrackerClient {
   public async fetchPersonByEmail(email: string): Promise<PersonEmail | null> {
     const path = `/api/v1/person/email/?address=${email}`;
 
-    const rows = await this.fetchAll<PersonEmail>(path);
+    const rows = await this.fetchAll(path, personEmailSchema);
 
     if (rows.length === 0) return null;
 
@@ -56,7 +67,7 @@ export class DatatrackerClient {
   public async fetchPerson(id: number): Promise<Person | null> {
     const path = `/api/v1/person/person/?id=${id.toString()}`;
 
-    const res = await this.fetchAll<Person>(path);
+    const res = await this.fetchAll(path, personSchema);
 
     if (res.length === 0) return null;
 
@@ -66,7 +77,7 @@ export class DatatrackerClient {
   public async fetchPeople(ids: number[]): Promise<Person[]> {
     const path = `/api/v1/person/person/?id__in=${ids.join(',')}`;
 
-    const res = await this.fetchAll<Person>(path);
+    const res = await this.fetchAll(path, personSchema);
 
     return res;
   }
@@ -77,7 +88,7 @@ export class DatatrackerClient {
 
     const path = `/api/v1/meeting/meeting/?id=${meetingId.toString()}&limit=${FetchLimit.toString()}`;
 
-    const res = await this.fetchAll<Meeting>(path);
+    const res = await this.fetchAll(path, meetingSchema);
 
     if (res.length === 0) return null;
 
@@ -91,7 +102,7 @@ export class DatatrackerClient {
   ): Promise<MeetingRegistration[]> {
     const path = `/api/v1/meeting/registration/?person=${personId.toString()}&limit=${FetchLimit.toString()}`;
 
-    const res = await this.fetchAll<MeetingRegistration>(path);
+    const res = await this.fetchAll(path, meetingRegistrationSchema);
 
     return res;
   }
@@ -101,7 +112,7 @@ export class DatatrackerClient {
   ): Promise<DocHistoryAuthor[]> {
     const path = `/api/v1/doc/dochistoryauthor/?person=${personId.toString()}&limit=${FetchLimit.toString()}`;
 
-    const res = await this.fetchAll<DocHistoryAuthor>(path);
+    const res = await this.fetchAll(path, docHistoryAuthorSchema);
 
     return res;
   }
@@ -109,7 +120,7 @@ export class DatatrackerClient {
   public async fetchDocHistory(documentId: number): Promise<DocHistory[]> {
     const path = `/api/v1/doc/dochistory/?id=${documentId.toString()}&limit=${FetchLimit.toString()}`;
 
-    const res = await this.fetchAll<DocHistory>(path);
+    const res = await this.fetchAll(path, docHistorySchema);
 
     return res;
   }
@@ -121,7 +132,7 @@ export class DatatrackerClient {
 
     for (const id of chunked(ids, 150)) {
       const path = `/api/v1/doc/dochistory/?id__in=${id.join(',')}&limit=${FetchLimit.toString()}`;
-      const res = await this.fetchAll<DocHistory>(path);
+      const res = await this.fetchAll(path, docHistorySchema);
 
       res.forEach((r) => {
         dates.set(r.id, new Date(r.time));
@@ -153,7 +164,7 @@ export class DatatrackerClient {
     return [...affiliations];
   }
 
-  private async fetchJson<T>(path: string): Promise<T> {
+  private async fetchJson<T>(path: string, schema: zod.ZodType<T>): Promise<T> {
     return pool.schedule(async () => {
       const res = await fetch(`${this.BASE}${path}`, {
         headers: {
@@ -166,16 +177,28 @@ export class DatatrackerClient {
 
       if (!res.ok) throw new DatatrackerError(res.status, path);
 
-      return await res.json();
+      const parsed = schema.safeParse(res);
+
+      if (!parsed.success) {
+        throw new ApiResponseError(path, parsed.error.issues);
+      }
+
+      return parsed.data;
     });
   }
 
-  private async fetchAll<T>(firstPath: string): Promise<T[]> {
+  private async fetchAll<T>(
+    firstPath: string,
+    schema: zod.ZodType<T>
+  ): Promise<T[]> {
     const out: T[] = [];
     let path: string | null = firstPath;
 
     while (path !== null) {
-      const page: TastypieResponse<T> = await this.fetchJson(path);
+      const page: TastypieResponse<T> = await this.fetchJson(
+        path,
+        tastypieSchema(schema)
+      );
       out.push(...page.objects);
       path = page.meta.next;
     }
