@@ -1,7 +1,6 @@
 import type {
   DateIndexFetchResult,
-  MailMessage,
-  MsgCount
+  MailMessage
 } from 'src/mailarchive/types.js';
 import { getRedirectUrl, parseDateIndex } from './date-index.js';
 import { parseMessage } from './message.js';
@@ -10,6 +9,8 @@ import { BadParametersError, HttpError } from 'src/mailarchive/errors.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent } from 'src/network/constants.js';
 import zod from 'zod';
+import { msgCountSchema } from './schema.js';
+import { ApiResponseError } from 'src/network/errors.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
@@ -92,13 +93,13 @@ export class MailArchiveClient {
     }
 
     const res = await this.fetchScheduled(endPoint);
-    const data = (await res.json()) as MsgCount;
+    const parsed = msgCountSchema.safeParse(await res.json());
 
-    if (!data.msg_counts[this.list]) {
-      return 0;
+    if (!parsed.success) {
+      throw new ApiResponseError(endPoint, parsed.error.issues);
     }
 
-    return data.msg_counts[this.list];
+    return parsed.data.msg_counts[this.list] ?? 0;
   }
 
   /**
