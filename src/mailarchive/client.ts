@@ -37,6 +37,19 @@ export class MailArchiveClient {
   }
 
   /**
+   * Fetch all the mails under a certain bucket in this working group.
+   * @param bucket {string}
+   * @returns {Promise<MailMessage[]>}
+   */
+  public async fetchMailMessagesByBucket(
+    bucket: string
+  ): Promise<MailMessage[]> {
+    const hashes = await this.fetchHashesByBucket(bucket);
+
+    return await this.fetchMessagesByHashes(hashes);
+  }
+
+  /**
    * Fetch the total message count in this working group
    *
    * If `start` and `end` is not provided, it will returns the message count
@@ -89,23 +102,9 @@ export class MailArchiveClient {
    */
   public async fetchMailMessagesByYear(year: string): Promise<MailMessage[]> {
     const dateIndexEntry = await this.fetchDateIndexByYear(year);
-
     const hashes = dateIndexEntry.flatMap((d) => d.entry.map((d) => d.hash));
 
-    const res = await Promise.allSettled(
-      hashes.map((h) => this.fetchMailMessageByHash(h))
-    );
-
-    res.forEach((r, i) => {
-      if (r.status === 'rejected') {
-        Logger.error(
-          `${hashes[i]} failed: ${r.reason instanceof Error ? r.reason.message : 'Unknown reason'}`,
-          'MailArchiveClient'
-        );
-      }
-    });
-
-    return res.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+    return await this.fetchMessagesByHashes(hashes);
   }
 
   /**
@@ -173,6 +172,29 @@ export class MailArchiveClient {
       first,
       ...rest.filter((r) => r.status === 'fulfilled').map((r) => r.value)
     ];
+  }
+
+  private async fetchMessagesByHashes(
+    hashes: string[]
+  ): Promise<MailMessage[]> {
+    const results = await Promise.allSettled(
+      hashes.map((h) => this.fetchMailMessageByHash(h))
+    );
+
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        Logger.error(
+          `${hashes[index]} failed: ${
+            result.reason instanceof Error
+              ? result.reason.message
+              : 'Unknown reason'
+          }`,
+          'MailArchiveClient'
+        );
+      }
+    });
+
+    return results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
   }
 
   private getBucketsOfYear(year: string) {
