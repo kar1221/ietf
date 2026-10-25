@@ -9,7 +9,7 @@ import { TaskPool } from 'src/network/task-pool.js';
 import { BadParametersError, HttpError } from 'src/mailarchive/errors.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent } from 'src/network/constants.js';
-import z from 'zod';
+import zod from 'zod';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
@@ -77,7 +77,7 @@ export class MailArchiveClient {
     }
 
     let endPoint = `${this.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
-    const dateSchema = z.iso.date();
+    const dateSchema = zod.iso.date();
 
     if (start) {
       const { success } = dateSchema.safeParse(start);
@@ -108,7 +108,7 @@ export class MailArchiveClient {
    */
   public async fetchMailMessagesByYear(year: string): Promise<MailMessage[]> {
     const dateIndexEntry = await this.fetchDateIndexByYear(year);
-    const hashes = dateIndexEntry.flatMap((d) => d.entry.map((d) => d.hash));
+    const hashes = dateIndexEntry.flatMap((d) => d.entry.map((dd) => dd.hash));
 
     return await this.fetchMessagesByHashes(hashes);
   }
