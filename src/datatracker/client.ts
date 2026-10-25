@@ -177,7 +177,7 @@ export class DatatrackerClient {
 
       if (!res.ok) throw new DatatrackerError(res.status, path);
 
-      const parsed = schema.safeParse(res);
+      const parsed = schema.safeParse(await res.json());
 
       if (!parsed.success) {
         throw new ApiResponseError(path, parsed.error.issues);
