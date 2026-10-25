@@ -1,5 +1,5 @@
 import { TaskPool } from 'src/network/task-pool.js';
-import { ApiResponseError, DatatrackerError } from './errors.js';
+import { DatatrackerError } from './errors.js';
 import { Logger } from 'src/logger.js';
 import { UserAgent, FetchLimit } from 'src/network/constants.js';
 import type { ICache } from 'src/cache/interface.js';
@@ -24,6 +24,7 @@ import type {
 } from './schema.js';
 
 import zod from 'zod';
+import { ApiResponseError } from 'src/errors.js';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 1000 });
 
