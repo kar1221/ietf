@@ -10,7 +10,7 @@ const envSchema = z.object({
   DATAPATH: z
     .string('')
     .transform((t) => path.resolve(import.meta.dirname, '..', t)),
-  DB_PATH: z.string()
+  DATABASE_URL: z.string().startsWith('postgres')
 });
 
 const parse = envSchema.safeParse(process.env);
