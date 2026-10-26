@@ -4,6 +4,7 @@ export interface EmailAddress {
 }
 
 export interface MailMessage {
+  hash: string | null;
   subject: string;
   from: EmailAddress;
   to: EmailAddress[];
