@@ -9,7 +9,8 @@ const envSchema = z.object({
     .default(false),
   DATAPATH: z
     .string('')
-    .transform((t) => path.resolve(import.meta.dirname, '..', t))
+    .transform((t) => path.resolve(import.meta.dirname, '..', t)),
+  DB_PATH: z.string()
 });
 
 const parse = envSchema.safeParse(process.env);
