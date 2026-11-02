@@ -1,0 +1,17 @@
+{
+  "name": "@ietf/pipeline",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/populate.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "populate": "tsx src/populate.ts"
+  },
+  "dependencies": {
+    "pg": "^8.23.1",
+    "dotenv": "^17.4.2",
+    "@ietf/clients": "workspace:*",
+    "@ietf/db": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

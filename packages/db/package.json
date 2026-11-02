@@ -1,0 +1,21 @@
+{
+  "name": "@ietf/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate": "tsx src/migrate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "default": "./src/db.ts",
+      "types": "./src/db.ts"
+    }
+  },
+  "dependencies": {
+    "pg": "^8.23.1",
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
+  }
+}
