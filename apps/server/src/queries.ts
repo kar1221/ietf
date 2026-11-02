@@ -4,13 +4,14 @@ import type {
   MessageOverview,
   MessageContent
 } from '@ietf/api-schema';
+import type {
+  MessageContentRow,
+  MessageOverviewRow,
+  OverviewRow
+} from '@ietf/db/types';
 
 export async function getOverview(): Promise<ListOverview> {
-  const { rows } = await pool.query<{
-    list: string;
-    bucket: string;
-    count: number;
-  }>(
+  const { rows } = await pool.query<OverviewRow>(
     `SELECT list, bucket, count(*)::int AS count
       FROM messages
       GROUP BY list, bucket
@@ -54,15 +55,12 @@ export async function getMessageOverviews(
                   ORDER BY bucket, sent_at
                   LIMIT $3 OFFSET $4`;
 
-  const { rows } = await pool.query<{
-    id: string;
-    hash: string | null;
-    message_id: string | null;
-    from_name: string;
-    from_address: string;
-    subject: string;
-    sent_at: Date | null;
-  }>(query, [list, bucket, limit, offset]);
+  const { rows } = await pool.query<MessageOverviewRow>(query, [
+    list,
+    bucket,
+    limit,
+    offset
+  ]);
 
   const result = rows.map((r) => ({
     id: Number(r.id),
@@ -84,16 +82,7 @@ export async function getMessage(id: number): Promise<MessageContent | null> {
                   FROM messages 
                   WHERE id = $1`;
 
-  const { rows } = await pool.query<{
-    id: string;
-    content: string;
-    hash: string | null;
-    message_id: string | null;
-    from_name: string;
-    from_address: string;
-    subject: string;
-    sent_at: Date | null;
-  }>(query, [id]);
+  const { rows } = await pool.query<MessageContentRow>(query, [id]);
 
   if (rows.length === 0) return null;
 
