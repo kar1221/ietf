@@ -1,0 +1,52 @@
+{
+  "name": "@ietf/clients",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "jsdom": "^30.1.2",
+    "postal-mime": "^4.0.5",
+    "zod": "^4.4.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./mailarchive": {
+      "default": "./src/mailarchive/client.ts",
+      "types": "./src/mailarchive/client.ts"
+    },
+    "./mailarchive/types": {
+      "default": "./src/mailarchive/types.ts",
+      "types": "./src/mailarchive/types.ts"
+    },
+    "./mailarchive/errors": {
+      "default": "./src/mailarchive/errors.ts",
+      "types": "./src/mailarchive/errors.ts"
+    },
+    "./mailarchive/mbox": {
+      "default": "./src/mailarchive/mbox.ts",
+      "types": "./src/mailarchive/mbox.ts"
+    },
+    "./mailarchive/message": {
+      "default": "./src/mailarchive/message.ts",
+      "types": "./src/mailarchive/message.ts"
+    },
+    "./datatracker": {
+      "default": "./src/datatracker/client.ts",
+      "types": "./src/datatracker/client.ts"
+    },
+    "./datatracker/errors": {
+      "default": "./src/datatracker/errors.ts",
+      "types": "./src/datatracker/errors.ts"
+    },
+    "./datatracker/types": {
+      "default": "./src/datatracker/schema.ts",
+      "types": "./src/datatracker/schema.ts"
+    },
+    "./network/errors": {
+      "default": "./src/network/errors.ts",
+      "types": "./src/network/errors.ts"
+    }
+  }
+}

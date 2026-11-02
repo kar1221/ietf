@@ -1,0 +1,18 @@
+{
+  "name": "@ietf/server",
+  "version": "0.0.0",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "tsx --watch src/index.ts"
+  },
+  "dependencies": {
+    "@ietf/api-schema": "workspace:*",
+    "@ietf/clients": "workspace:*",
+    "@ietf/db": "workspace:*",
+    "fastify": "^5.12.7",
+    "fastify-type-provider-zod": "^7.0.0",
+    "zod": "^4.4.3"
+  }
+}
