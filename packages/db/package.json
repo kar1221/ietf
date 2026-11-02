@@ -9,8 +9,8 @@
   },
   "exports": {
     ".": {
-      "default": "./src/db.ts",
-      "types": "./src/db.ts"
+      "types": "./src/db.ts",
+      "default": "./src/db.ts"
     }
   },
   "dependencies": {
