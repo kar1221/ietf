@@ -10,7 +10,7 @@ export interface MessageOverview {
   hash: string | null;
   messageId: string | null;
   from: EmailAddress;
-  date: Date | null;
+  date: string | null;
   subject: string;
 }
 

@@ -13,8 +13,6 @@ export async function getOverview(): Promise<ListOverview[]> {
       ORDER BY list, bucket`
   );
 
-  console.log(rows);
-
   if (rows.length === 0) {
     return [];
   }
@@ -42,29 +40,31 @@ export async function getOverview(): Promise<ListOverview[]> {
 
 export async function getMessageOverviews(
   list: string,
-  bucket?: string,
-  limit?: number
+  limit: number,
+  offset: number,
+  bucket?: string
 ): Promise<MessageOverview[]> {
   const query = `SELECT id, hash, message_id, from_name, from_address, subject, sent_at 
                   FROM messages 
                   WHERE list = $1 AND ($2::text IS NULL OR bucket = $2) 
-                  ORDER BY bucket, sent_at`;
+                  ORDER BY bucket, sent_at
+                  LIMIT $3 OFFSET $4`;
 
   const { rows } = await pool.query<{
-    id: number;
+    id: string;
     hash: string | null;
     message_id: string | null;
     from_name: string;
     from_address: string;
     subject: string;
-    date: Date | null;
-  }>(query, [list, bucket]);
+    sent_at: Date | null;
+  }>(query, [list, bucket, limit, offset]);
 
   const result = rows.map(
     (r) =>
       ({
-        id: r.id,
-        date: r.date,
+        id: Number(r.id),
+        date: r.sent_at?.toISOString() ?? null,
         hash: r.hash,
         messageId: r.message_id,
         subject: r.subject,
@@ -84,14 +84,14 @@ export async function getMessage(id: number): Promise<MessageContent | null> {
                   WHERE id = $1`;
 
   const { rows } = await pool.query<{
-    id: number;
+    id: string;
     content: string;
     hash: string | null;
     message_id: string | null;
     from_name: string;
     from_address: string;
     subject: string;
-    date: Date | null;
+    sent_at: Date | null;
   }>(query, [id]);
 
   if (rows.length === 0) return null;
@@ -100,8 +100,8 @@ export async function getMessage(id: number): Promise<MessageContent | null> {
 
   return {
     content: result.content,
-    date: result.date,
-    id: result.id,
+    date: result.sent_at?.toISOString() ?? null,
+    id: Number(result.id),
     subject: result.subject,
     from: {
       address: result.from_address,
