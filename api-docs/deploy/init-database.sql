@@ -1,2 +1,0 @@
-CREATE DATABASE ietf;
-CREATE DATABASE ietf_test;
