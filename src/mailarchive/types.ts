@@ -3,14 +3,15 @@ export interface EmailAddress {
   address: string;
 }
 
-export interface IETFDocument {
+export interface MailMessage {
+  hash: string | null;
   subject: string;
   from: EmailAddress;
   to: EmailAddress[];
   cc: EmailAddress[];
   content: string;
   date: Date | null;
-  messageId: string;
+  messageId: string | null;
   inReplyTo: string | null;
   references: string[];
 }
