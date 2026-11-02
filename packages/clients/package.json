@@ -24,10 +24,6 @@
       "default": "./src/mailarchive/errors.ts",
       "types": "./src/mailarchive/errors.ts"
     },
-    "./mailarchive/mbox": {
-      "default": "./src/mailarchive/mbox.ts",
-      "types": "./src/mailarchive/mbox.ts"
-    },
     "./mailarchive/message": {
       "default": "./src/mailarchive/message.ts",
       "types": "./src/mailarchive/message.ts"
