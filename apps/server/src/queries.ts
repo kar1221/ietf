@@ -18,29 +18,19 @@ export async function getOverview(): Promise<ListOverview> {
       ORDER BY list, bucket`
   );
 
-  if (rows.length === 0) {
-    return [];
-  }
-
-  const result: ListOverview = [];
-
-  let buckets: { bucket: string; count: number }[] = [];
-  let currentList = rows[0].list;
-
+  const byList = new Map<string, ListOverview[number]>();
   for (const row of rows) {
-    if (row.list === currentList) {
-      buckets.push({ bucket: row.bucket, count: row.count });
-      continue;
+    let group = byList.get(row.list);
+
+    if (!group) {
+      group = { list: row.list, buckets: [] };
+      byList.set(row.list, group);
     }
 
-    result.push({ list: row.list, buckets: buckets.slice() });
-    buckets = [{ bucket: row.bucket, count: row.count }];
-    currentList = row.list;
+    group.buckets.push({ bucket: row.bucket, count: row.count });
   }
 
-  result.push({ list: currentList, buckets: buckets.slice() });
-
-  return result;
+  return [...byList.values()];
 }
 
 export async function getMessageOverviews(
