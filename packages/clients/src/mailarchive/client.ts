@@ -13,20 +13,17 @@ const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 export class MailArchiveClient {
   public static readonly BASE = 'https://mailarchive.ietf.org';
 
-  private readonly list: string;
-
-  public constructor(list: string) {
-    this.list = list;
-  }
-
   /**
    * Fetch the correspond document with the given hash in this working group.
    * Will throw if no document with this hash can be found in this working group.
    * @param hash Hash of the document
    * @returns {Promise<MailMessage>}
    */
-  public async fetchMailMessageByHash(hash: string): Promise<MailMessage> {
-    const endPoint = `${MailArchiveClient.BASE}/arch/msg/${this.list}/${hash}/download`;
+  public async fetchMailMessageByHash(
+    list: string,
+    hash: string
+  ): Promise<MailMessage> {
+    const endPoint = `${MailArchiveClient.BASE}/arch/msg/${list}/${hash}/download`;
 
     const res = await this.fetchScheduled(endPoint);
     const raw = await res.text();
@@ -40,11 +37,12 @@ export class MailArchiveClient {
    * @returns {Promise<MailMessage[]>}
    */
   public async fetchMailMessagesByBucket(
+    list: string,
     bucket: string
   ): Promise<MailMessage[]> {
-    const hashes = await this.fetchHashesByBucket(bucket);
+    const hashes = await this.fetchHashesByBucket(list, bucket);
 
-    return await this.fetchMessagesByHashes(hashes);
+    return await this.fetchMessagesByHashes(list, hashes);
   }
 
   /**
@@ -63,6 +61,7 @@ export class MailArchiveClient {
    */
 
   public async fetchMsgCounts(
+    list: string,
     ...args: [] | [start: string, end?: string]
   ): Promise<number> {
     const [start, end] = args;
@@ -73,7 +72,7 @@ export class MailArchiveClient {
       );
     }
 
-    let endPoint = `${MailArchiveClient.BASE}/api/v1/stats/msg_counts/?list=${this.list}`;
+    let endPoint = `${MailArchiveClient.BASE}/api/v1/stats/msg_counts/?list=${list}`;
 
     if (start) {
       endPoint += `&start=${start}`;
@@ -90,7 +89,7 @@ export class MailArchiveClient {
       throw new ApiResponseError(endPoint, parsed.error.issues);
     }
 
-    return parsed.data.msg_counts[this.list] ?? 0;
+    return parsed.data.msg_counts[list] ?? 0;
   }
 
   /**
@@ -98,11 +97,14 @@ export class MailArchiveClient {
    * @param year
    * @returns {Promise<MailMessage[]}
    */
-  public async fetchMailMessagesByYear(year: string): Promise<MailMessage[]> {
-    const dateIndexEntry = await this.fetchDateIndexByYear(year);
+  public async fetchMailMessagesByYear(
+    list: string,
+    year: string
+  ): Promise<MailMessage[]> {
+    const dateIndexEntry = await this.fetchDateIndexByYear(list, year);
     const hashes = dateIndexEntry.flatMap((d) => d.entry.map((dd) => dd.hash));
 
-    return await this.fetchMessagesByHashes(hashes);
+    return await this.fetchMessagesByHashes(list, hashes);
   }
 
   /**
@@ -110,8 +112,11 @@ export class MailArchiveClient {
    * @param bucket {string} For example: "2024-01"
    * @returns {Promise<string[]}
    */
-  public async fetchHashesByBucket(bucket: string): Promise<string[]> {
-    const dateIndex = await this.fetchDateIndexByBucket(bucket);
+  public async fetchHashesByBucket(
+    list: string,
+    bucket: string
+  ): Promise<string[]> {
+    const dateIndex = await this.fetchDateIndexByBucket(list, bucket);
 
     const hashes = dateIndex.entry.map((e) => e.hash);
 
@@ -124,9 +129,10 @@ export class MailArchiveClient {
    * @returns {Promise<DateIndexFetchResult>}
    */
   public async fetchDateIndexByBucket(
+    list: string,
     bucket: string
   ): Promise<DateIndexFetchResult> {
-    const endPoint = `${MailArchiveClient.BASE}/arch/browse/static/${this.list}/${bucket}`;
+    const endPoint = `${MailArchiveClient.BASE}/arch/browse/static/${list}/${bucket}`;
 
     let res = await this.fetchScheduled(endPoint);
     let html = await res.text();
@@ -152,18 +158,19 @@ export class MailArchiveClient {
    * @returns {Promise<DateIndexFetchResult[]>}
    */
   public async fetchDateIndexByYear(
+    list: string,
     year: string
   ): Promise<DateIndexFetchResult[]> {
     const buckets = this.getBucketsOfYear(year);
 
-    const first = await this.fetchDateIndexByBucket(buckets[0]);
+    const first = await this.fetchDateIndexByBucket(list, buckets[0]);
 
     if (first.didRedirect) {
       return [first];
     }
 
     const rest = await Promise.allSettled(
-      buckets.slice(1).map((b) => this.fetchDateIndexByBucket(b))
+      buckets.slice(1).map((b) => this.fetchDateIndexByBucket(list, b))
     );
 
     return [
@@ -173,10 +180,11 @@ export class MailArchiveClient {
   }
 
   private async fetchMessagesByHashes(
+    list: string,
     hashes: string[]
   ): Promise<MailMessage[]> {
     const results = await Promise.allSettled(
-      hashes.map((h) => this.fetchMailMessageByHash(h))
+      hashes.map((h) => this.fetchMailMessageByHash(list, h))
     );
 
     results.forEach((result, index) => {
