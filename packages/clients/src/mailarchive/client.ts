@@ -1,4 +1,4 @@
-import type { DateIndexFetchResult, MailMessage } from './types.ts';
+import type { DateIndexFetchResult, IndexEntry, MailMessage } from './types.ts';
 import { getRedirectUrl, parseDateIndex } from './date-index.ts';
 import { parseMessage } from './message.ts';
 import { TaskPool } from '../network/task-pool.ts';
@@ -160,13 +160,13 @@ export class MailArchiveClient {
   public async fetchDateIndexByYear(
     list: string,
     year: string
-  ): Promise<DateIndexFetchResult[]> {
+  ): Promise<IndexEntry[]> {
     const buckets = this.getBucketsOfYear(year);
 
     const first = await this.fetchDateIndexByBucket(list, buckets[0]);
 
     if (first.didRedirect) {
-      return [first];
+      return first.entry;
     }
 
     const rest = await Promise.allSettled(
@@ -174,8 +174,11 @@ export class MailArchiveClient {
     );
 
     return [
-      first,
-      ...rest.filter((r) => r.status === 'fulfilled').map((r) => r.value)
+      ...first.entry,
+      ...rest
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => r.value.entry)
+        .flat()
     ];
   }
 
