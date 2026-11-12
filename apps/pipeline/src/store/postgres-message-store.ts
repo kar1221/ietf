@@ -64,12 +64,10 @@ export class PostgresMessageStore implements IMessageStore {
 
       await client.query('COMMIT');
       return result;
-    } catch (e: unknown) {
+    } catch (e) {
       await client.query('ROLLBACK');
 
-      const error = e instanceof Error ? e.message : 'unknown error';
-      Logger.error(error, 'PostgresMessageStore.upsertMany');
-      return result;
+      throw e;
     } finally {
       client.release();
     }
