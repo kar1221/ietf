@@ -71,7 +71,6 @@ export class Manifest {
         'Nothing to update, skipping manifest refresh',
         'Manifest.refreshManifestBucket'
       );
-      return 0;
     }
 
     await withTransaction(this.pool, async (c) => {
