@@ -1,71 +1,92 @@
-import { Logger } from './logger.ts';
-import type { MailArchiveClient } from '@ietf/clients/mailarchive';
+import { MailArchiveClient } from '@ietf/clients/mailarchive';
 import type { IMessageStore } from './store/interface.ts';
+import type { Pool } from 'pg';
+import type { MailMessage } from '@ietf/clients/mailarchive/types';
+import { Logger } from './logger.ts';
 
 export class Reconciler {
   private readonly messageStore: IMessageStore;
-  private readonly mailarchive: MailArchiveClient;
+  private pool: Pool;
+  private client: MailArchiveClient;
 
-  public constructor(store: IMessageStore, mailarchive: MailArchiveClient) {
+  public constructor(store: IMessageStore, pool: Pool) {
     this.messageStore = store;
-    this.mailarchive = mailarchive;
+    this.pool = pool;
+    this.client = new MailArchiveClient();
   }
 
-  public async checkBucket(list: string, bucket: string) {
-    const storeMessageCounts = await this.messageStore.countByBucket(
-      list,
-      bucket
+  public async reconcileBucket(
+    list: string,
+    bucket: string
+  ): Promise<ReconcileReport> {
+    const missingHash = await this.getMissingHash(list, bucket);
+
+    if (missingHash.length === 0) {
+      return { bucket, missing: 0, fetched: 0 };
+    }
+
+    const results = await Promise.allSettled(
+      missingHash.map((h) => this.client.fetchMailMessageByHash(list, h))
     );
 
-    const [start, end] = this.getDateRange(bucket);
-    const actualMessageCounts = await this.mailarchive.fetchMsgCounts(
-      start,
-      end
-    );
+    const messages: MailMessage[] = [];
 
-    if (storeMessageCounts === actualMessageCounts) return;
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') {
+        messages.push(r.value);
+        return;
+      }
 
-    if (storeMessageCounts > actualMessageCounts) {
       Logger.warn(
-        `[${list}] Bucket ${bucket} has ${storeMessageCounts.toString()} entries, but the actual messages count is ${actualMessageCounts.toString()}`
+        // oxlint-disable-next-line typescript/restrict-template-expressions
+        `gap fetch ${missingHash[i]} failed: ${r.reason}`,
+        'Reconciler'
       );
-      return;
+    });
+
+    const fetched = messages.length;
+    const missing = missingHash.length - fetched;
+
+    for (const chunk of chunked(messages, 25)) {
+      await this.messageStore.upsertMany(list, bucket, chunk);
     }
 
-    const messages = await this.mailarchive.fetchMailMessagesByBucket(bucket);
+    return {
+      bucket,
+      missing,
+      fetched
+    };
+  }
 
-    await this.messageStore.upsertMany(list, bucket, messages);
+  public async getMissingHash(list: string, bucket: string): Promise<string[]> {
+    const query = `SELECT m.hash FROM manifest_entries m
+                    WHERE m.list = $1 AND m.bucket = $2
+                    AND NOT EXISTS (SELECT 1 FROM messages s
+                                    WHERE s.list = $1 AND s.bucket = $2 AND s.hash = m.hash)`;
 
-    const messageCountsAfter = await this.messageStore.countByBucket(
+    const { rows } = await this.pool.query<{ hash: string }>(query, [
       list,
       bucket
-    );
+    ]);
 
-    if (messageCountsAfter !== actualMessageCounts) {
-      Logger.error(
-        `[${list}] Bucket ${bucket} still has mismatched message counts after reconilation!`
-      );
-      Logger.error(
-        `Expected: ${actualMessageCounts.toString()}, got: ${messageCountsAfter.toString()}`
-      );
-    }
+    const missingHash = rows.map((r) => r.hash);
+
+    return missingHash;
+  }
+}
+
+export interface ReconcileReport {
+  bucket: string;
+  missing: number;
+  fetched: number;
+}
+
+function chunked<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
   }
 
-  private getDateRange(bucket: string): [start: string, end: string] {
-    const start = `${bucket}-01`;
-
-    const splitted = bucket.split('-');
-
-    const year = Number(splitted[0]);
-    const month = Number(splitted[1]);
-
-    if (month === 12) {
-      return [start, `${(year + 1).toString()}-01-01`];
-    }
-
-    return [
-      start,
-      `${year.toString()}-${(month + 1).toString().padStart(2, '0')}-01`
-    ];
-  }
+  return out;
 }
