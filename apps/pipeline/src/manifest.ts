@@ -1,8 +1,7 @@
 import { MailArchiveClient } from '@ietf/clients/mailarchive';
 import { withTransaction } from '@ietf/db';
-import { ReconcileError } from './errors.ts';
 import type { Pool } from 'pg';
-import { Logger } from '../../../packages/clients/src/logger.ts';
+import { Logger } from './logger.ts';
 
 const mailarchive = new MailArchiveClient();
 
