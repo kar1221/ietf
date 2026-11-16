@@ -1,4 +1,9 @@
-import type { DateIndexFetchResult, IndexEntry, MailMessage } from './types.ts';
+import type {
+  DateIndexCacheEntry,
+  DateIndexFetchResult,
+  IndexEntry,
+  MailMessage
+} from './types.ts';
 import { getRedirectUrl, parseDateIndex } from './date-index.ts';
 import { parseMessage } from './message.ts';
 import { TaskPool } from '../network/task-pool.ts';
@@ -7,11 +12,24 @@ import { Logger } from '../logger.ts';
 import { UserAgent } from '../network/constants.ts';
 import { msgCountSchema } from './schema.js';
 import { ApiResponseError } from '../network/errors.ts';
+import type { ICache } from '../cache/interface.ts';
+import { InMemoryCache } from '../cache/in-memory.ts';
 
 const pool = new TaskPool({ maxConcurrent: 2, minIntervalMs: 2000 });
 
+export interface Option {
+  dateIndexByYearCache?: ICache<string, IndexEntry[]>;
+}
+
 export class MailArchiveClient {
   public static readonly BASE = 'https://mailarchive.ietf.org';
+
+  private readonly dateIndexByYear: ICache<string, IndexEntry[]>;
+
+  public constructor(option?: Option) {
+    this.dateIndexByYear =
+      option?.dateIndexByYearCache ?? new InMemoryCache<string, IndexEntry[]>();
+  }
 
   /**
    * Fetch the correspond document with the given hash in this working group.
@@ -102,7 +120,7 @@ export class MailArchiveClient {
     year: string
   ): Promise<MailMessage[]> {
     const dateIndexEntry = await this.fetchDateIndexByYear(list, year);
-    const hashes = dateIndexEntry.flatMap((d) => d.entry.map((dd) => dd.hash));
+    const hashes = dateIndexEntry.map((d) => d.hash);
 
     return await this.fetchMessagesByHashes(list, hashes);
   }
@@ -132,6 +150,15 @@ export class MailArchiveClient {
     list: string,
     bucket: string
   ): Promise<DateIndexFetchResult> {
+    const year = bucket.slice(0, 4);
+    const cacheKey = `${list}/${year}`;
+
+    const cached = this.dateIndexByYear.get(cacheKey);
+    if (cached) {
+      Logger.log(`Date index cache hit: ${cacheKey}`, 'MailArchiveClient');
+      return { entry: cached, didRedirect: true };
+    }
+
     const endPoint = `${MailArchiveClient.BASE}/arch/browse/static/${list}/${bucket}`;
 
     let res = await this.fetchScheduled(endPoint);
@@ -145,6 +172,10 @@ export class MailArchiveClient {
     }
 
     const entry = parseDateIndex(html);
+
+    if (redirectUrl !== null && entry.length > 0) {
+      this.dateIndexByYear.set(cacheKey, entry);
+    }
 
     return {
       entry,
