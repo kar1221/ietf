@@ -38,7 +38,7 @@ export class Manifest {
   ): Promise<number> {
     const isManifestExists = await this.manifestHasBucket(list, bucket);
 
-    const shouldRefresh = force || this.isClosed(bucket) || !isManifestExists;
+    const shouldRefresh = force || !this.isClosed(bucket) || !isManifestExists;
     if (!shouldRefresh) return 0;
 
     const page = await mailarchive.fetchDateIndexByBucket(list, bucket);
