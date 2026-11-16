@@ -19,7 +19,7 @@ export class MBox {
     this.workingGroup = workingGroup;
   }
 
-  public async getAvailableBuckets(): Promise<string[]> {
+  public async getSyncedBucket(): Promise<string[]> {
     const files = await readdir(`${env.DATAPATH}/${this.workingGroup}`);
 
     const buckets = files.map((f) => f.replace('.mail', ''));
