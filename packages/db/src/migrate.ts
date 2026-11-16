@@ -58,26 +58,24 @@ async function migrate() {
     await withTransaction(pool, async (c) => {
       await c.query(sql);
 
-      await client.query(
-        'INSERT INTO schema_migrations (version) VALUES ($1)',
-        [file.version]
-      );
+      await c.query('INSERT INTO schema_migrations (version) VALUES ($1)', [
+        file.version
+      ]);
 
       console.log(`Applied ${file.filepath}`);
     });
   }
+
+  await client.end();
 }
 
+console.log('Running migration...');
 migrate()
-  .catch((e: unknown) => {
-    const error = e instanceof Error ? e.message : 'Unknown error';
-
-    console.error('Migration failed: ' + error);
-
-    process.exitCode = 1;
-  })
-  .finally(() => {
-    pool.end().catch(() => {
-      console.error('Error ending pool');
+  .then(() => {
+    pool.end().catch((e: unknown) => {
+      console.log(e);
     });
+  })
+  .catch((e: unknown) => {
+    console.log(e);
   });
