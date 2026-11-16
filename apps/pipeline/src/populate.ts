@@ -1,4 +1,4 @@
-import { MBox } from '@ietf/clients/mailarchive/mbox';
+import { MBox } from './mbox.ts';
 import { parseMessage } from '@ietf/clients/mailarchive/message';
 import { PostgresMessageStore } from './store/postgres-message-store.ts';
 import pool from '@ietf/db';
