@@ -52,9 +52,6 @@ export class Manifest {
 
         return `${year}-${month}` === bucket;
       });
-
-      if (entries.length === 0)
-        throw new ReconcileError(`Manifest parse failed for ${list}/${bucket}`);
     }
 
     const rows = entries

@@ -1,6 +1,7 @@
 import type { IndexEntry } from './types.ts';
 import { JSDOM } from 'jsdom';
 import { MailArchiveClient } from './client.ts';
+import { ParseError } from './errors.ts';
 
 export function parseDateIndex(html: string): IndexEntry[] {
   let date = '';
@@ -9,7 +10,11 @@ export function parseDateIndex(html: string): IndexEntry[] {
   const { document } = new JSDOM(html).window;
 
   const mailContainer = document.querySelector('ul.static-index');
-  if (mailContainer == null) return [];
+  if (mailContainer == null) {
+    throw new ParseError(
+      'date-index: ul.static-index not found - possible page format change?'
+    );
+  }
 
   for (const child of mailContainer.children) {
     if (child.tagName === 'STRONG') {
