@@ -2,6 +2,7 @@ import { MailArchiveClient } from '@ietf/clients/mailarchive';
 import { withTransaction } from '@ietf/db';
 import { ReconcileError } from './errors.ts';
 import type { Pool } from 'pg';
+import { Logger } from '../../../packages/clients/src/logger.ts';
 
 const mailarchive = new MailArchiveClient();
 
@@ -65,6 +66,14 @@ export class Manifest {
         fetchedAt: new Date()
       }))
       .filter((r) => r.hash !== '');
+
+    if (rows.length === 0) {
+      Logger.log(
+        'Nothing to update, skipping manifest refresh',
+        'Manifest.refreshManifestBucket'
+      );
+      return 0;
+    }
 
     await withTransaction(this.pool, async (c) => {
       await c.query(
