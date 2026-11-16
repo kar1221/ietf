@@ -74,7 +74,7 @@ export class Manifest {
     await withTransaction(this.pool, async (c) => {
       await c.query(
         `DELETE FROM manifest_entries
-          WHERE list = $1, bucket = $2`,
+          WHERE list = $1 AND bucket = $2`,
         [list, bucket]
       );
 
