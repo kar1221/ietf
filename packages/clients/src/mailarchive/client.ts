@@ -1,9 +1,4 @@
-import type {
-  DateIndexCacheEntry,
-  DateIndexFetchResult,
-  IndexEntry,
-  MailMessage
-} from './types.ts';
+import type { DateIndexFetchResult, IndexEntry, MailMessage } from './types.ts';
 import { getRedirectUrl, parseDateIndex } from './date-index.ts';
 import { parseMessage } from './message.ts';
 import { TaskPool } from '../network/task-pool.ts';
