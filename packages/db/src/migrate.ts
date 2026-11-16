@@ -1,5 +1,5 @@
 import path from 'path';
-import pool from './db.ts';
+import pool, { withTransaction } from './db.ts';
 import { readdir, readFile } from 'fs/promises';
 import type { PoolClient } from 'pg';
 
@@ -55,26 +55,17 @@ async function migrate() {
 
     const sql = await readFile(file.filepath, 'utf8');
 
-    await client.query('BEGIN');
-
-    try {
-      await client.query(sql);
+    await withTransaction(pool, async (c) => {
+      await c.query(sql);
 
       await client.query(
         'INSERT INTO schema_migrations (version) VALUES ($1)',
         [file.version]
       );
 
-      await client.query('COMMIT');
       console.log(`Applied ${file.filepath}`);
-    } catch (e) {
-      await client.query('ROLLBACK');
-      client.release();
-      throw e;
-    }
+    });
   }
-
-  client.release();
 }
 
 migrate()

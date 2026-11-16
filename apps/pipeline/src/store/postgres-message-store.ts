@@ -5,6 +5,7 @@ import type {
 import type { IMessageStore, StoreStats, UpsertResult } from './interface.ts';
 import type { Pool, PoolClient } from 'pg';
 import { Logger } from '../logger.ts';
+import { withTransaction } from '@ietf/db';
 
 export class PostgresMessageStore implements IMessageStore {
   private pool: Pool;
@@ -18,22 +19,11 @@ export class PostgresMessageStore implements IMessageStore {
     bucket: string,
     msg: MailMessage
   ): Promise<UpsertResult> {
-    const client = await this.pool.connect();
+    const result = await withTransaction(this.pool, async (c) => {
+      return await this.upsertWithClient(c, list, bucket, msg);
+    });
 
-    try {
-      await client.query('BEGIN');
-
-      const result = await this.upsertWithClient(client, list, bucket, msg);
-
-      await client.query('COMMIT');
-
-      return result;
-    } catch (e) {
-      await client.query('ROLLBACK');
-      throw e;
-    } finally {
-      client.release();
-    }
+    return result;
   }
 
   public async upsertMany(
@@ -41,14 +31,11 @@ export class PostgresMessageStore implements IMessageStore {
     bucket: string,
     messages: MailMessage[]
   ): Promise<Map<string, UpsertResult>> {
-    const client = await this.pool.connect();
     const result = new Map<string, UpsertResult>();
 
-    try {
-      await client.query('BEGIN');
-
+    await withTransaction(this.pool, async (c) => {
       for (const msg of messages) {
-        const res = await this.upsertWithClient(client, list, bucket, msg);
+        const res = await this.upsertWithClient(c, list, bucket, msg);
         const key = msg.hash ?? msg.messageId;
 
         if (key === null) {
@@ -61,16 +48,9 @@ export class PostgresMessageStore implements IMessageStore {
 
         result.set(key, res);
       }
+    });
 
-      await client.query('COMMIT');
-      return result;
-    } catch (e) {
-      await client.query('ROLLBACK');
-
-      throw e;
-    } finally {
-      client.release();
-    }
+    return result;
   }
 
   public async getByBucket(
