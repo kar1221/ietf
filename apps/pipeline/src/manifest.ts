@@ -57,15 +57,13 @@ export class Manifest {
         throw new ReconcileError(`Manifest parse failed for ${list}/${bucket}`);
     }
 
-    const year = new Date().getFullYear();
-
     const rows = entries
       .map((e) => ({
         list,
         bucket,
         hash: e.hash,
         entryDate: new Date(
-          `${year.toString()}-${monthOf(e.date).toString().padStart(2, '0')}`
+          `${e.date.slice(-4)}-${monthOf(e.date).toString().padStart(2, '0')}`
         ),
         fetchedAt: new Date()
       }))
